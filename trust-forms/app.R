@@ -1,12 +1,13 @@
+#
 library(shiny)
 
-# which fields get saved 
-fieldsAll <- c("name", "favourite_pkg", "used_shiny", "r_num_years", "os_type")
+# define que campos se guardan en los archivos que van al directorio
+fieldsAll <- c("nombre", "fecha_naci", "favourite_pkg", "used_shiny", "r_num_years", "os_type")
 
-# which fields are mandatory
-fieldsMandatory <- c("name", "favourite_pkg")
+# define que campos son mandatorios para registrar
+fieldsMandatory <- c("nombre", "favourite_pkg")
 
-# add an asterisk to an input label
+# agregar asterisco rojo a los campos mandatorios
 labelMandatory <- function(label) {
   tagList(
     label,
@@ -14,18 +15,17 @@ labelMandatory <- function(label) {
   )
 }
 
-# get current Epoch time
+# colocar tiempo actual para cada registro
 epochTime <- function() {
   return(as.integer(Sys.time()))
 }
 
-# get a formatted string of the timestamp (exclude colons as they are invalid
-# characters in Windows filenames)
+# formatear el tiempo de la respuesta a un formato mas legible
 humanTime <- function() {
   format(Sys.time(), "%Y%m%d-%H%M%OS")
 }
 
-# save the results to a file
+# guardar las respuestas a un file .csv
 saveData <- function(data) {
   fileName <- sprintf("%s_%s.csv",
                       humanTime(),
@@ -35,7 +35,7 @@ saveData <- function(data) {
             row.names = FALSE, quote = TRUE)
 }
 
-# load all responses into a data.frame
+# cargar todas las respuestas previas en un dataframe. Combina todos los archivos .csv que encuentre en el directorio
 loadData <- function() {
   files <- list.files(file.path(responsesDir), full.names = TRUE)
   data <- lapply(files, read.csv, stringsAsFactors = FALSE)
@@ -44,46 +44,46 @@ loadData <- function() {
   data
 }
 
-# directory where responses get stored
+# nombre del folder directorio donde se almacenaran las respuestas. Debe ser creado localmente. En la terminal de Ubuntu por ejemplo
 responsesDir <- file.path("responses")
 
-# CSS to use in the app
+# CSS del app estetica
 appCSS <-
   ".mandatory_star { color: red; }
-   .shiny-input-container { margin-top: 25px; }
-   #submit_msg { margin-left: 15px; }
-   #error { color: red; }
-   body { background: #fcfcfc; }
-   #header { background: #fff; border-bottom: 1px solid #ddd; margin: -20px -15px 0; padding: 15px 15px 10px; }
-  "
+.shiny-input-container { margin-top: 25px; }
+#submit_msg { margin-left: 15px; }
+#error { color: red; }
+body { background: #fcfcfc; }
+#header { background: #fff; border-bottom: 1px solid #ddd; margin: -20px -15px 0; padding: 15px 15px 10px; }
+"
 
-# usernames that are admins
+# nombres de usuario que son administradores, si se corriera el app en servidor Pro
 adminUsers <- c("admin", "prof")
 
-# info for sharing this app on facebook/twitter
+# informacion para compartir este app
 share <- list(
-  title = "Mimicking a Google Form with a Shiny app",
-  url = "http://daattali.com/shiny/mimic-google-form/",
-  image = "http://daattali.com/shiny/img/mimic.png",
-  description = "Learn how to create a Shiny app that allows users to submit responses to a form. Submissions get stored permanently and can be loaded back into the app.",
-  twitter_user = "daattali"
+  title = "Trust Forms",
+  url = "https://www.datanautas.com",
+  image = "https://www.datanautas.com/wp-content/uploads/2019/02/icon_datanautas-e1549591621239.png",
+  description = "Un shiny app tipo formulario que almacena informacion",
+  twitter_user = "Czor_Salad"
 )
 
 shinyApp(
   ui = fluidPage(
     shinyjs::useShinyjs(),
     shinyjs::inlineCSS(appCSS),
-    title = "Mimicking a Google Form with a Shiny app",
+    title = "Trust Forms - Datanautas",
     tags$head(
-      tags$link(rel = "shortcut icon", type="image/x-icon", href="http://daattali.com/shiny/img/favicon.ico"),
-
+      tags$link(rel = "shortcut icon", type="image/x-icon", href="https://www.datanautas.com/wp-content/uploads/2019/02/icon_datanautas-e1549591621239.png"),
+      
       # Facebook OpenGraph tags
       tags$meta(property = "og:title", content = share$title),
       tags$meta(property = "og:type", content = "website"),
       tags$meta(property = "og:url", content = share$url),
       tags$meta(property = "og:image", content = share$image),
       tags$meta(property = "og:description", content = share$description),
-    
+      
       # Twitter summary cards
       tags$meta(name = "twitter:card", content = "summary"),
       tags$meta(name = "twitter:site", content = paste0("@", share$twitter_user)),
@@ -93,58 +93,64 @@ shinyApp(
       tags$meta(name = "twitter:image", content = share$image)
     ),
     tags$a(
-      href="https://github.com/daattali/shiny-server/tree/master/mimic-google-form",
+      href="https://github.com/CzorSalad/shiny-server/tree/master/",
       tags$img(style="position: absolute; top: 0; right: 0; border: 0;",
                src="github-green-right.png",
                alt="Fork me on GitHub")
     ),
     div(id = "header",
-      h1("Mimicking a Google Form with a Shiny app"),
-      h4("This app is a supplement to my",
-         a(href = "http://deanattali.com/2015/06/14/mimicking-google-form-shiny/",
-           "blog post on the topic")
-      ),
-      strong( 
-      span("Created by "),
-      a("Dean Attali", href = "http://deanattali.com"),
-      HTML("&bull;"),
-      span("Code"),
-      a("on GitHub", href = "https://github.com/daattali/shiny-server/tree/master/mimic-google-form"),
-      HTML("&bull;"),
-      a("More apps", href = "http://daattali.com/shiny/"), "by Dean")
+        h1("Trust-Forms"),
+        h4("App Demo desarrollado por ",
+           a(href = "https://www.datanautas.com",
+             "Datanautas")
+        ),
+        strong( 
+          span("Creado por "),
+          a("Datanautas", href = "https://www.datanautas.com"),
+          HTML("&bull;"),
+          span("Codigo disponible"),
+          a("en GitHub", href = "https://github.com/CzorSalad/shiny-server/tree/master/trust-forms"),
+          HTML("&bull;"),
+          a("Otros apps", href = "https://www.datanautas.com"), "por Datanautas")
     ),
     
     fluidRow(
       column(6,
-        div(
-          id = "form",
-          
-          textInput("name", labelMandatory("Name"), ""),
-          textInput("favourite_pkg", labelMandatory("Favourite R package")),
-          checkboxInput("used_shiny", "I've built a Shiny app in R before", FALSE),
-          sliderInput("r_num_years", "Number of years using R", 0, 25, 2, ticks = FALSE),
-          selectInput("os_type", "Operating system used most frequently",
-                      c("",  "Windows", "Mac", "Linux")),
-          actionButton("submit", "Submit", class = "btn-primary"),
-          
-          shinyjs::hidden(
-            span(id = "submit_msg", "Submitting..."),
-            div(id = "error",
-                div(br(), tags$b("Error: "), span(id = "error_msg"))
-            )
-          )
-        ),
-
-        shinyjs::hidden(
-          div(
-            id = "thankyou_msg",
-            h3("Thanks, your response was submitted successfully!"),
-            actionLink("submit_another", "Submit another response")
-          )
-        )
+             div(
+               id = "form",
+               
+               textInput("nombre", labelMandatory("Nombre del cliente"), ""),
+               textInput("favourite_pkg", labelMandatory("# de Cedula")),
+               dateInput("fecha_naci", labelMandatory("Fecha de Nacimiento"),
+                         value = "1990-01-01",
+                         min = "1935-01-01",
+                         format = "dd-mm-yyyy",
+                         startview = "decade"),
+               checkboxInput("used_shiny", "Es una Persona Politicamente Expuesta (PEP)?", FALSE),
+               sliderInput("r_num_years", "Anos del financiamiento:", 0, 12, 1, ticks = FALSE),
+               selectInput("os_type", "Estado Civil",
+                           c("",  "Soltero", "Casado", "No especificado")),
+               
+               actionButton("submit", "Registrar", class = "btn-primary"),
+               
+               shinyjs::hidden(
+                 span(id = "submit_msg", "Registrando..."),
+                 div(id = "error",
+                     div(br(), tags$b("Error: "), span(id = "error_msg"))
+                 )
+               )
+             ),
+             
+             shinyjs::hidden(
+               div(
+                 id = "thankyou_msg",
+                 h3("El financiamiento ha sido registrado con exito!"),
+                 actionLink("submit_another", "Registrar otro financiamiento")
+               )
+             )
       ),
       column(6,
-        uiOutput("adminPanelContainer")
+             uiOutput("adminPanelContainer")
       )
     )
   ),
@@ -208,10 +214,10 @@ shinyApp(
       
       div(
         id = "adminPanel",
-        h2("Previous responses (only visible to admins)"),
-        downloadButton("downloadBtn", "Download responses"), br(), br(),
+        h2("Lista de financiamientos registrados"),
+        downloadButton("downloadBtn", "Descargar registros"), br(), br(),
         DT::dataTableOutput("responsesTable"), br(),
-        "* There were over 2000 responses by Dec 4 2017, so all data prior to that date was deleted as a cleanup"
+        "* Se debe considerar si borrar los registros al ser descargados o si permitir seleccionar rango de descarga."
       )
     })
     
@@ -224,17 +230,19 @@ shinyApp(
     output$responsesTable <- DT::renderDataTable({
       data <- loadData()
       data$timestamp <- as.POSIXct(data$timestamp, origin="1970-01-01")
+      data$fecha_naci <- as.Date(data$fecha_naci, origin="1970-01-01")
       DT::datatable(
         data,
+        colnames = c("Nombre", "Fecha de Nacimiento", "Cedula", "PEP?", "Anos de Finan.", "Estado civil", "Timestamp"),
         rownames = FALSE,
         options = list(searching = FALSE, lengthChange = FALSE)
       )
     })
     
-    # Allow user to download responses
+    # Permitir a usuarios descargar los registros
     output$downloadBtn <- downloadHandler(
       filename = function() { 
-        sprintf("mimic-google-form_%s.csv", humanTime())
+        sprintf("trust_forms_%s.csv", humanTime())
       },
       content = function(file) {
         write.csv(loadData(), file, row.names = FALSE)
