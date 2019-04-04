@@ -1,10 +1,10 @@
 #
 library(shiny)
 
-# define que campos se guardan en los archivos que van al directorio
+# definir que campos se guardan en los archivos que van al directorio
 fieldsAll <- c("nombre", "fecha_naci", "favourite_pkg", "used_shiny", "r_num_years", "os_type")
 
-# define que campos son mandatorios para registrar
+# definir que campos son mandatorios para registrar
 fieldsMandatory <- c("nombre", "favourite_pkg")
 
 # agregar asterisco rojo a los campos mandatorios
@@ -77,14 +77,14 @@ shinyApp(
     tags$head(
       tags$link(rel = "shortcut icon", type="image/x-icon", href="https://www.datanautas.com/wp-content/uploads/2019/02/icon_datanautas-e1549591621239.png"),
       
-      # Facebook OpenGraph tags
+      # Facebook
       tags$meta(property = "og:title", content = share$title),
       tags$meta(property = "og:type", content = "website"),
       tags$meta(property = "og:url", content = share$url),
       tags$meta(property = "og:image", content = share$image),
       tags$meta(property = "og:description", content = share$description),
       
-      # Twitter summary cards
+      # Twitter
       tags$meta(name = "twitter:card", content = "summary"),
       tags$meta(name = "twitter:site", content = paste0("@", share$twitter_user)),
       tags$meta(name = "twitter:creator", content = paste0("@", share$twitter_user)),
@@ -127,7 +127,7 @@ shinyApp(
                          format = "dd-mm-yyyy",
                          startview = "decade"),
                checkboxInput("used_shiny", "Es una Persona Politicamente Expuesta (PEP)?", FALSE),
-               sliderInput("r_num_years", "Anos del financiamiento:", 0, 12, 1, ticks = FALSE),
+               sliderInput("r_num_years", "Duracion (a) del financiamiento:", 0, 12, 1, ticks = FALSE),
                selectInput("os_type", "Estado Civil",
                            c("",  "Soltero", "Casado", "No especificado")),
                
@@ -156,7 +156,7 @@ shinyApp(
   ),
   server = function(input, output, session) {
     
-    # Enable the Submit button when all mandatory fields are filled out
+    # Habilitar el boton de Registrar cuando se llenan todos los campos mandatorios
     observe({
       mandatoryFilled <-
         vapply(fieldsMandatory,
@@ -168,8 +168,16 @@ shinyApp(
       
       shinyjs::toggleState(id = "submit", condition = mandatoryFilled)
     })
+   
+    # Permitir descargar si el password es correcto 
+    observe({
+      valid_password <- c("lenovo179447") == input$password
+      
+      shinyjs::toggleState(id = "downloadBtn", condition = valid_password)
+    })
     
-    # Gather all the form inputs (and add timestamp)
+    
+    # Combinar todos los inputs y agregar tiempo
     formData <- reactive({
       data <- sapply(fieldsAll, function(x) input[[x]])
       data <- c(data, timestamp = epochTime())
@@ -177,15 +185,15 @@ shinyApp(
       data
     })    
     
-    # When the Submit button is clicked, submit the response
+    # Cuando se clickea el boton de Registrar, registrar la respuesta
     observeEvent(input$submit, {
       
-      # User-experience stuff
+      # Experiencia de usuario
       shinyjs::disable("submit")
       shinyjs::show("submit_msg")
       shinyjs::hide("error")
       
-      # Save the data (show an error message in case of error)
+      # Guardar la data (ensenar mensaje de error si hay alguno)
       tryCatch({
         saveData(formData())
         shinyjs::reset("form")
@@ -202,31 +210,31 @@ shinyApp(
       })
     })
     
-    # submit another response
+    # Registrar otra respuesta
     observeEvent(input$submit_another, {
       shinyjs::show("form")
       shinyjs::hide("thankyou_msg")
     })
     
-    # render the admin panel
+    # Panel de Administrador
     output$adminPanelContainer <- renderUI({
       if (!isAdmin()) return()
       
       div(
         id = "adminPanel",
         h2("Lista de financiamientos registrados"),
-        downloadButton("downloadBtn", "Descargar registros"), br(), br(),
+        downloadButton("downloadBtn", "Descargar registros"),  passwordInput("password", "Password:"),br(), br(),
         DT::dataTableOutput("responsesTable"), br(),
         "* Se debe considerar si borrar los registros al ser descargados o si permitir seleccionar rango de descarga."
       )
     })
     
-    # determine if current user is admin
+    # determinar si el usuario es administrador
     isAdmin <- reactive({
       is.null(session$user) || session$user %in% adminUsers
     })    
     
-    # Show the responses in the admin table
+    # ensenar respuestas en la tabla de administrador
     output$responsesTable <- DT::renderDataTable({
       data <- loadData()
       data$timestamp <- as.POSIXct(data$timestamp, origin="1970-01-01")
@@ -241,7 +249,7 @@ shinyApp(
     
     # Permitir a usuarios descargar los registros
     output$downloadBtn <- downloadHandler(
-      filename = function() { 
+      filename = function() {
         sprintf("trust_forms_%s.csv", humanTime())
       },
       content = function(file) {
