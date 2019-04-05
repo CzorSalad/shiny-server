@@ -1,5 +1,6 @@
 #
 library(shiny)
+library(tidyverse)
 
 # definir que campos se guardan en los archivos que van al directorio
 fieldsAll <- c("nombre", "fecha_naci", "favourite_pkg", "used_shiny", "r_num_years", "os_type")
