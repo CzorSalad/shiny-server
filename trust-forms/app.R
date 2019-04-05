@@ -15,6 +15,11 @@ labelMandatory <- function(label) {
   )
 }
 
+#rangos de fechas para filtro de descargas del administrador
+timezone_pty <- c("EST")
+min_date <- c(as.Date("1930-01-01"))
+max_date <- c(Sys.Date())
+
 # colocar tiempo actual para cada registro
 epochTime <- function() {
   return(as.integer(Sys.time()))
@@ -55,6 +60,12 @@ appCSS <-
 #error { color: red; }
 body { background: #fcfcfc; }
 #header { background: #fff; border-bottom: 1px solid #ddd; margin: -20px -15px 0; padding: 15px 15px 10px; }
+.nav-tabs>li.active>a, .nav-tabs>li.active>a:hover, .nav-tabs>li.active>a:focus { border-top: 2px solid orange; border-bottom: 0; font-weight: bold; }
+.nav-tabs { font-size: 1.4em; }
+.nav-tabs>li { margin-left: 7px; }
+.nav-tabs>li>a { background-color: #f8f8f8; border: 1px solid #dddddd; padding: 10px 30px; margin-left: 5px; }
+.nav>li>a:hover, .nav>li>a:focus { background-color: #dddddd; }
+.tab-content { padding-top: 15px; }
 "
 
 # nombres de usuario que son administradores, si se corriera el app en servidor Pro
@@ -76,6 +87,7 @@ shinyApp(
     title = "Trust Forms - Datanautas",
     tags$head(
       tags$link(rel = "shortcut icon", type="image/x-icon", href="https://www.datanautas.com/wp-content/uploads/2019/02/icon_datanautas-e1549591621239.png"),
+      tags$link(href = "app.css", rel = "stylesheet"),
       
       # Facebook
       tags$meta(property = "og:title", content = share$title),
@@ -111,14 +123,19 @@ shinyApp(
           span("Codigo disponible"),
           a("en GitHub", href = "https://github.com/CzorSalad/shiny-server/tree/master/trust-forms"),
           HTML("&bull;"),
-          a("Otros apps", href = "https://www.datanautas.com"), "por Datanautas")
+          a("Otros apps", href = "https://www.datanautas.com"), "por Datanautas"),
+        br(),br()
     ),
     
     fluidRow(
-      column(6,
+      column(12,
+            tabsetPanel(id = "mainNav",
+             tabPanel("Registrar",
+                      value = "registrar",
+             
              div(
                id = "form",
-               
+               h4("Formulario de Registro"),
                textInput("nombre", labelMandatory("Nombre del cliente"), ""),
                textInput("favourite_pkg", labelMandatory("# de Cedula")),
                dateInput("fecha_naci", labelMandatory("Fecha de Nacimiento"),
@@ -130,6 +147,7 @@ shinyApp(
                sliderInput("r_num_years", "Duracion (a) del financiamiento:", 0, 12, 1, ticks = FALSE),
                selectInput("os_type", "Estado Civil",
                            c("",  "Soltero", "Casado", "No especificado")),
+               passwordInput("password_agente","ID de Agente:", placeholder = "Coloque su ID para poder registrar"),
                
                actionButton("submit", "Registrar", class = "btn-primary"),
                
@@ -148,11 +166,23 @@ shinyApp(
                  actionLink("submit_another", "Registrar otro financiamiento")
                )
              )
-      ),
-      column(6,
-             uiOutput("adminPanelContainer")
+          ),
+      tabPanel("Financiamientos",
+               value = "financiamientos",
+               
+                column(6,
+                       div(
+                         id = "adminvalidation",
+                         h4("ID de Administrador"),
+                         passwordInput("password","Contrasena:", placeholder = "Coloque su ID para accesar")
+                       ),
+
+                       uiOutput("adminPanelContainer")
+                )
+      )
       )
     )
+  )
   ),
   server = function(input, output, session) {
     
@@ -164,16 +194,21 @@ shinyApp(
                  !is.null(input[[x]]) && input[[x]] != ""
                },
                logical(1))
-      mandatoryFilled <- all(mandatoryFilled)
+      mandatoryFilled <- all(c(all(mandatoryFilled), input$password_agente == password_list_agente))
       
       shinyjs::toggleState(id = "submit", condition = mandatoryFilled)
     })
    
-    # Permitir descargar si el password es correcto 
+    # Administracion de contrasenas para habilitar funciones como descargar y ver tablas
+    # Lista de contrasenas de admins
+    password_list_admin <- c("lenovo179447")
+    password_list_agente <- c("RP-ALB-7919")
+    
+    # Habilitar descargar si el password es correcto 
     observe({
-      valid_password <- c("lenovo179447") == input$password
+      valid_password_admin <- input$password %in% password_list_admin
       
-      shinyjs::toggleState(id = "downloadBtn", condition = valid_password)
+      shinyjs::toggleState(id = "downloadBtn", condition = valid_password_admin)
     })
     
     
@@ -221,11 +256,23 @@ shinyApp(
       if (!isAdmin()) return()
       
       div(
+        conditionalPanel("input.password == 'lenovo179447' | input.password == 'artec7919'", 
         id = "adminPanel",
         h2("Lista de financiamientos registrados"),
-        downloadButton("downloadBtn", "Descargar registros"),  passwordInput("password", "Password:"),br(), br(),
+        downloadButton("downloadBtn", "Descargar registros"),
+        br(),
+        dateRangeInput(inputId = "rango_fechas",
+                       label = "Ver financimientos desde:",
+                       min = min_date,
+                       max = max_date,
+                       startview = "decade",
+                       start = "1990-01-01",
+                       end = max_date,
+                       language = "es",
+                       separator = " - "),
         DT::dataTableOutput("responsesTable"), br(),
         "* Se debe considerar si borrar los registros al ser descargados o si permitir seleccionar rango de descarga."
+        )
       )
     })
     
@@ -239,11 +286,14 @@ shinyApp(
       data <- loadData()
       data$timestamp <- as.POSIXct(data$timestamp, origin="1970-01-01")
       data$fecha_naci <- as.Date(data$fecha_naci, origin="1970-01-01")
+      data <- data %>%
+        filter(fecha_naci >= as.Date(input$rango_fechas[1], origin = "1970-01-01") &
+                 fecha_naci <= as.Date(input$rango_fechas[2], origin = "1970-01-01"))
       DT::datatable(
         data,
         colnames = c("Nombre", "Fecha de Nacimiento", "Cedula", "PEP?", "Anos de Finan.", "Estado civil", "Timestamp"),
         rownames = FALSE,
-        options = list(searching = FALSE, lengthChange = FALSE)
+        options = list(searching = TRUE, lengthChange = FALSE)
       )
     })
     
