@@ -2,7 +2,7 @@
 title: "Cotización de Financiamiento"
 author: "Corporacion Financiera de Equipos, S.A."
 date: "`r Sys.Date()`"
-output: pdf_document
+output: html_document
 params:
   nombre: NA
   tipo_finan: NA
