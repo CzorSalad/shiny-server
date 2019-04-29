@@ -5,7 +5,6 @@ library(shiny)
 library(tidyverse)
 library(shinyalert)
 library(mongolite)
-library(jsonlite)
 #####################
 
 ## - GENERALES DEL FORMULARIO (campos)
