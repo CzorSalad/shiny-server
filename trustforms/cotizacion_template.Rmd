@@ -1,0 +1,71 @@
+---
+title: "Cotización de Financiamiento"
+author: "Corporacion Financiera de Equipos, S.A."
+date: "`r Sys.Date()`"
+output: html_document
+params:
+  nombre: NA
+  tipo_finan: NA
+  monto_total: NA
+  abono: NA
+  nper: NA
+  agente: NA
+  cotizacion_global: NA
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(stringr)
+
+# Printear valores en porcentaje
+percent <- function(x, digits = 1, format = "f", ...) {
+  paste0(formatC(100 * x, format = format, digits = digits, ...), "%")
+}
+# Printear valores en dolares
+dolares <- function(x, digits = 2, format = "f", ...) {
+  paste0("$ ",formatC(x, format = format, digits = digits, big.mark = ",", ...))
+}
+
+
+```
+![](http://www.gcp.com.pa/images/cfsa.png)
+
+Cotización preparada por el agente `r params$agente` para `r params$nombre`.
+
+##Datos para cotizacion:
+
+    1. Cliente: `r params$nombre`
+    2. Tipo de financiamiento: `r params$tipo_finan`
+    3. Monto total del financiamiento: `r dolares(params$monto_total)`
+    4. Abono: `r dolares(params$abono)`
+
+</br>
+
+```{r}
+# Los parametros del app de pasan correctamente a esta plantilla de cotizacion.
+params$tipo_finan
+
+```
+
+####Global Bank:
+
+```{r echo=FALSE}
+
+knitr::kable(params$cotizacion_global)
+
+```
+####BAC:
+
+```{r echo=FALSE}
+
+knitr::kable(params$cotizacion_global)
+
+```
+### Aprobacion
+
+<div style="width:600px"><hr/></div>
+
+\noindent\rule{2cm}{0.5pt}
+______________________________<br />Firma del Cliente<br />*Cotizacion valida por 30 dias*
