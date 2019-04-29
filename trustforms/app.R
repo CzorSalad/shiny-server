@@ -1157,7 +1157,7 @@ shinyApp(
     
     # Cotizacion RMD html para descargar
     output$cotizacion_report_btn <- downloadHandler(
-      filename = function() {sprintf("cotizacion_%s.html", humanTime())
+      filename = function() {sprintf("cotizacion_%s.pdf", humanTime())
         },
       content = function(file) {
         # Copiar el reporte a un directorio temporal
