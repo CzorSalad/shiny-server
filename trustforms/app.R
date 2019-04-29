@@ -1062,7 +1062,6 @@ shinyApp(
       DT::replaceData(proxy, d5(), resetPaging = FALSE)  # important
       editDataMongo(searchClientMongo(), col_to_edit, v)
       shinyjs::reset("load_client")
-      shinyjs::hide("cliente_info_table")
       shinyjs::disable("delete_client_btn")
       
     })
