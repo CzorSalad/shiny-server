@@ -148,7 +148,7 @@ labelMandatory <- function(label) {
 }
 
 # Printear valores en porcentaje
-percent <- function(x, digits = 1, format = "f", ...) {
+percent <- function(x, digits = 2, format = "f", ...) {
   paste0(formatC(100 * x, format = format, digits = digits, ...), "%")
 }
 # Printear valores en dolares
@@ -535,7 +535,9 @@ shinyApp(
                           selectInput("cotizar_modelo", "Tipo de Auto", choices = c("Camioneta", "Sedan", "Agya"), selected = "Camioneta")
                        )
                   ),
-                  mainPanel()
+                  mainPanel(
+                    uiOutput("cotizarTableContainer")
+                  )
                 )
               ),
     ###########################
@@ -912,6 +914,7 @@ shinyApp(
     
     # Habilitar panel de cotizacion si el password es correcto
     observe({
+      req(input$shinyalert)
       if (!is.null(input$shinyalert) && input$shinyalert %in% password_list_agente) {
         shinyjs::show("cotizacion_form")
       } else {shinyjs::hide("cotizacion_form")}
@@ -1158,6 +1161,16 @@ shinyApp(
         )
     })
     
+    # Panel/Container de tabla de cotizacion
+    output$cotizarTableContainer <- renderUI({
+      if (!esAgente()) return()
+      
+      div(id = "cotizar_table",
+          h4("Cotizacion - Vista Previa"),
+          DT::dataTableOutput("cotizarTable"), br()
+      )
+    })
+    
     # Panel con mensaje de verificacion de sesion
     output$sesionVerificada <- renderUI({
       if (!esAgente()) return()
@@ -1196,6 +1209,23 @@ shinyApp(
         cliente_data,
         editable = TRUE,
         rownames = FALSE,
+        options = list(lengthChange = FALSE,
+                       scrollX = TRUE,
+                       searching = FALSE)
+      ) 
+    })
+    
+    # Tabla de cotizacion preview
+    output$cotizarTable <- DT::renderDataTable({
+      req(input$cotizar_monto_total, input$cotizar_abono)
+      Global_Bank <- cotizacion_format(prestamoGlobalBank(reactiveCotizar()))
+      BAC <- cotizacion_format(prestamoBAC(reactiveCotizar()))
+      cotizacion_data <- t(rbind(Global_Bank, BAC))
+      colnames(cotizacion_data) <- c("Global Bank", "BAC")
+      DT::datatable(
+        cotizacion_data,
+        editable = FALSE,
+        rownames = TRUE,
         options = list(lengthChange = FALSE,
                        scrollX = TRUE,
                        searching = FALSE)
