@@ -498,18 +498,14 @@ shinyApp(
     ),
     div(id = "header",
         h1("Trust-Forms"),
-        h4("App Demo desarrollado por ",
-           a(href = "https://www.datanautas.com",
-             "Datanautas")
-        ),
+        h4("v0.20.1"),
         strong( 
-          span("Creado por "),
-          a("Datanautas", href = "https://www.datanautas.com"),
+          span("Desarrollado por "),
+          a("Datanautas", href = "https://datanautas.com"),
           HTML("&bull;"),
           span("Codigo disponible"),
-          a("en GitHub", href = "https://github.com/CzorSalad/shiny-server/tree/master/trust-forms"),
-          HTML("&bull;"),
-          a("Otros apps", href = "https://www.datanautas.com"), "por Datanautas"),
+          a("en GitHub", href = "https://github.com/CzorSalad/shiny-server/tree/master/trustforms")
+        ),
         br(),br(),
         actionButton("log_in_btn", "Iniciar Sesion", class = "btn-primary", icon = icon("sign-in-alt")),
         br()
@@ -528,14 +524,15 @@ shinyApp(
                 value = "cotizar",
                 sidebarLayout(
                   sidebarPanel(
-                       div(style = "padding: 1% 0% 0% 2%;",
-                        downloadButton("cotizacion_report_btn", "Generar cotizacion"),
-                        textInput("cotizar_nombre", "Nombre del cliente", ""),
-                        selectInput("cotizar_tipo_finan", "Tipo de financiamiento", choices = c("Fideicomiso", "Otro", "Otro 2")),
-                        numericInput("cotizar_monto_total", "Valor del Auto", value = 0, step = 1000),
-                        numericInput("cotizar_abono", "Abono ($)", value = 0, step = 1000),
-                        sliderInput("cotizar_nper", "Numero de Periodos", value = 84, min = 0, max = 90, step = 6),
-                        selectInput("cotizar_modelo", "Tipo de Auto", choices = c("Camioneta", "Sedan", "Agya"), selected = "Camioneta")
+                       div(id = "cotizacion_form", 
+                          style = "padding: 1% 0% 0% 2%;",
+                          downloadButton("cotizacion_report_btn", strong("COTIZAR"), class = "btn-success"),
+                          textInput("cotizar_nombre", "Nombre del cliente", ""),
+                          selectInput("cotizar_tipo_finan", "Tipo de financiamiento", choices = c("Fideicomiso", "Otro", "Otro 2")),
+                          numericInput("cotizar_monto_total", "Valor del Auto", value = 0, step = 1000),
+                          numericInput("cotizar_abono", "Abono ($)", value = 0, step = 1000),
+                          sliderInput("cotizar_nper", "Numero de Periodos", value = 84, min = 0, max = 90, step = 6),
+                          selectInput("cotizar_modelo", "Tipo de Auto", choices = c("Camioneta", "Sedan", "Agya"), selected = "Camioneta")
                        )
                   ),
                   mainPanel()
@@ -912,6 +909,14 @@ shinyApp(
       
       shinyjs::toggleState(id = "downloadBtn", condition = valid_password_admin)
     })
+    
+    # Habilitar panel de cotizacion si el password es correcto
+    observe({
+      if (!is.null(input$shinyalert) && input$shinyalert %in% password_list_agente) {
+        shinyjs::show("cotizacion_form")
+      } else {shinyjs::hide("cotizacion_form")}
+    })
+    
     ###########################
     
     ## ESTADO INICIAL
@@ -925,8 +930,9 @@ shinyApp(
     shinyjs::onclick("modificar_reg_btn",
                      shinyjs::toggle(id = "load_client", anim = TRUE))
     
-    # Esconder panel de modificar
+    # Esconder panel de modificar y cotizacion
     shinyjs::hide("cliente_info_table")
+    shinyjs::hide("cotizacion_form")
     
     #Deshabilitar boton de Modificar
     shinyjs::disable("modificar_reg_btn")
