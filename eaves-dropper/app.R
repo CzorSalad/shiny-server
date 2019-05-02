@@ -21,12 +21,12 @@ library(ggplot2)
 ## - MongoDB INFO Y CREDENCIALES - ##
 ##################
 options(mongodb = list(
-  "host" = "datanautas0",
-  "username" = "datanautas",
-  "password" = "dunlopdataman69420"
+  "host" = "yourHostname",
+  "username" = "username",
+  "password" = "password"
 ))
 databaseName <- "eaves_dropper"
-collectionName <- "resultados_loughran"
+collectionName <- "collectionName"
 ######
  
 ## - FUNCIONES R - ##
