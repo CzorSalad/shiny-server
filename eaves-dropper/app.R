@@ -16,19 +16,22 @@ library(dplyr)
 library(tidyr)
 library(stringr)
 library(ggplot2)
+library(wordcloud)
+library(reshape2)
+library(shinythemes)
 ######
 
 ## - MongoDB INFO Y CREDENCIALES - ##
 ##################
 options(mongodb = list(
   "host" = "yourHostname",
-  "username" = "username",
-  "password" = "password"
+  "username" = "yourUsername",
+  "password" = "yourPassword"
 ))
 databaseName <- "eaves_dropper"
-collectionName <- "collectionName"
+collectionName <- "resultados_loughran"
 ######
- 
+
 ## - FUNCIONES R - ##
 ##################
 
@@ -172,7 +175,7 @@ share <- list(
   title = "The Eaves-Dropper",
   url = "https://www.datanautas.com",
   image = "https://www.datanautas.com/wp-content/uploads/2019/02/icon_datanautas-e1549591621239.png",
-  description = "Monitor del sentiment en el stock market. Desarrollado por Datanautas.",
+  description = "Monitor del sentiment en el stock market. Desarrollado para ti por Datanautas.",
   twitter_user = "Czor_Salad"
 )
 ######
@@ -186,19 +189,16 @@ share <- list(
 ####
 
 # Define UI for application that draws a histogram
-ui <- fluidPage(
+ui <- fluidPage(theme = "slim.css",
   shinyjs::useShinyjs(),
-  shinyalert::useShinyalert(),
   
   ## - HTML TAGS, HTML INFO, HEADERS - ##
   #################
   title = "Eaves-Dropper",
   tags$head(
     tags$link(rel = "shortcut icon", type="image/x-icon", 
-              href="https://www.datanautas.com/wp-content/uploads/2019/02/icon_datanautas-e1549591621239.png"),
-    
-    # CSS para estetica del app
-    tags$link(href = "app.css", rel = "stylesheet"),
+              href="https://www.datanautas.com/wp-content/uploads/2019/02/icon_datanautas-e1549591621239.png",
+              height = "50px", width = "50px"),
     
     # Facebook
     tags$meta(property = "og:title", content = share$title),
@@ -238,12 +238,13 @@ ui <- fluidPage(
 
   ## - INPUTS - ##
   ###################
-   sidebarLayout(
+   tags$body(
+      sidebarLayout(
       sidebarPanel(
-        p(span("Ingresa los "), tags$em("symbols"), span("de la o las companias que quieras analizar y haz click en"),
+        p(span("Ingresa los "), tags$em("ticker symbols"), span("de las companias que quieras analizar y haz click en"),
         strong(span("EAVESDROP"))),
-        br(),
-        div(style="display: inline-block;vertical-align: top; padding-left: 10px;",
+        hr(),
+        div(style="display: inline-block;vertical-align: top; padding-left: 10px; padding-bottom: 25px;",
             actionButton(inputId = "eavesdrop_btn",
                      label = strong("EAVESDROP"),
                      icon = icon("comments-dollar"),
@@ -255,8 +256,7 @@ ui <- fluidPage(
                          label = strong("DESCARGAR"),
                          class = "btn-primary")
             ),
-        br(),
-        p(strong("Companías:"), style = "padding: 7% 0% 0% 2%;"),
+        wellPanel(p(strong("Companías:"), style = "padding: 7% 0% 0% 2%;"),
         p(tags$em("eg. AAPL para Apple")),
         textInput("symbols_1",
                      label = "",
@@ -282,7 +282,7 @@ ui <- fluidPage(
         textInput("symbols_6",
                     label = "",  
                     width = '50%'
-        )
+        ))
       ),
       
   ##########
@@ -290,9 +290,44 @@ ui <- fluidPage(
   ## - UI OUTPUTS - ##
   ######################
       mainPanel(
+        tabsetPanel(
+          tabPanel(id = "positivity_tab", "Positivity",
+        tags$head(tags$style( type="text/css", "
+                            #loadmessage {
+                             position: fixed;
+                             top: 0%;
+                             left: 0%;
+                             width: 100%;
+                             padding: 30px 15px 15px 15px;
+                             text-align: center;
+                             font-weight: bold;
+                             font-size: 100%;
+                             color: #000000;
+                             background-color: rgba(192, 192, 192, .6);
+                             z-index: 105;
+                             }
+                             ")),
+        br(),
+        h3("Metodología"),        
+        p(span("El objetivo de este app es cuantificar la 'Positividad' de los articulos de noticias más recientes de", tags$a("Yahoo Finance", href = "https://finance.yahoo.com/"), ". Los articulos
+            extraídos con técnicas de webscrapping son preparados para el análisis y son evaluados contra el lexicon financiero 'Loughran'. El mismo pretende
+          clasificar palabras en ingles bajo un contexto financiero. Las mismas son calificadas en las siguientes categorías: 'Positive',
+          'Negative', 'Litigious', 'Uncertainty', 'Constraining' y 'Superflous'.")),
+        
+        conditionalPanel(condition="$('html').hasClass('shiny-busy')",
+                         hr(),
+                         tags$div("Espera unos segundos mientras analizamos las noticias mÃ¡s recientes...",id="loadmessage")
+        ),
         shinyjs::hidden(div(id = "palabras_loughran_table",
-           uiOutput("wordsTableContainer")
-          )
+           uiOutput("wordsTableContainer"),
+           h3("Wordcloud: Qué palabras se repiten con mayor frecuencia?"),
+           p("Selecciona la companía para ver las palabras"),
+           selectInput("select_company", "Analizar compania:", c("Opción 1", "Opción 2", "Opción 3",
+                                                                 "Opción 4", "Opción 5", "Opción 6")),
+           plotOutput("wordcloudStocks"),
+           p("Entre mayor es la frecuencia de una palabra en las noticias analizadas, mayor es su tamano en el wordcloud."),
+           hr()
+           )
         ),
         
         shinyjs::hidden(
@@ -303,17 +338,13 @@ ui <- fluidPage(
         ), 
         shinyjs::hidden(div(id = "palabras_loughran_plot",
                             h3("Ratio de Positividad por Empresa"),
-                            plotOutput("positivityPlot"))),
-        h4("Metodología"),        
-        p("Positividad de los articulos evaluada contra el lexicon financiero 'Loughran'. El mismo permite
-                  clasificar las palabras bajo un contexto financiero considerando las siguientes categorías 'Positive',
-                  'Negative', 'Litigious', 'Uncertainty', 'Constraining' y 'Superflous'.
-                  El cálculo consiste en evaluar la presencia de palabras positivas vs. negativas."),
-        br(),
-        span(p("El ratio de positividad es calculado así: "), tags$em("(positive - negative) / (positive + negative))"))
-      )
+                            span(p("El ratio de positividad es calculado con la siguiente fórmula: "), tags$em("(positive - negative) / (positive + negative))")),
+                            plotOutput("positivityPlot")))
+      ),
+      tabPanel(id = "frecuency_tab", "Frecuencia")
    )
-)
+      )
+)))
   ##########
 
 ####
@@ -324,9 +355,26 @@ ui <- fluidPage(
 ###
 ####
 
-# Define server logic required to draw a histogram
-server <- function(input, output) {
 
+server <- function(input, output, session) {
+
+# Actualizar los valores del selector segun companias buscadas
+  observe({
+    x <- symbols()
+    
+    # Usar character(0) para reemplazar las vacias
+    x[is.null(x)] <- character(0)
+    
+    # Cambiar choices del selector segun companias seleccionadas
+    updateSelectInput(session, "select_company",
+                      label = paste("CompanÃ­as (", length(x), ")"),
+                      choices = x,
+                      selected = tail(x, 1)
+    )
+  })
+  
+  
+  
   # Habilitar boton de EAVESDROP
   observe({
     mandatoryFilled <- nchar(input$symbols_1) >= 2
@@ -398,7 +446,7 @@ shinyjs::disable("download_btn")
   # Panel/Container de tabla de contador de palabras
   output$wordsTableContainer <- renderUI({
     div(id = "words_table",
-        h3("Presencia de palabras según categoría del 'Loughran' lexicon"),
+        h3("Presencia de palabras segÃºn categorÃ­a del 'Loughran' lexicon"),
         DT::dataTableOutput("wordsTable"), br()
     )
   }) 
@@ -410,13 +458,22 @@ shinyjs::disable("download_btn")
       stock_sentiment_count(),
       editable = FALSE,
       rownames = TRUE,
+      autoHideNavigation = TRUE,
       options = list(lengthChange = FALSE,
                      scrollX = TRUE,
                      searching = FALSE)
     ) 
   })
 
-  
+  output$wordcloudStocks <- renderPlot({
+    req(input$select_company)
+    stock_sentiment_count <- articulos_stocks() %>%
+      inner_join(get_sentiments("loughran"), by = "word") %>%
+      count(word, sentiment, sort = TRUE) %>%
+      filter(sentiment == "positive" | sentiment == "negative") %>%
+      acast(word ~ sentiment, value.var = "n", fill = 0) %>%
+      comparison.cloud(colors = c("red", "#00C576"), max.words = 100)
+  })
   
   output$positivityPlot <- renderPlot({
      req(input$eavesdrop_btn)
@@ -426,8 +483,8 @@ shinyjs::disable("download_btn")
        ggplot(aes(symbol, score, fill = score > 0)) +
        geom_col(show.legend = FALSE) +
        coord_flip() +
-       labs(x = "Companía",
-            y = "Ratio de Positividad entre los 20 articulos de noticias más recientes")
+       labs(x = "CompanÃ­a",
+            y = "Ratio de Positividad entre los 20 articulos de noticias mÃ¡s recientes")
    })
   
   
