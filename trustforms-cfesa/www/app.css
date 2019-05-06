@@ -1,0 +1,23 @@
+.mandatory_star { color: red; }
+
+.shiny-input-container { margin-top: 25px; }
+
+#submit_msg { margin-left: 15px; }
+
+#error { color: red; }
+
+body { background: #fcfcfc; }
+
+#header { background: #fff; border-bottom: 1px solid #ddd; margin: -20px -15px 0; padding: 15px 15px 10px; }
+
+.nav-tabs>li.active>a, .nav-tabs>li.active>a:hover, .nav-tabs>li.active>a:focus { border-top: 2px solid #3072AE; border-bottom: 0; font-weight: bold; }
+
+.nav-tabs { font-size: 1.4em; }
+
+.nav-tabs>li { margin-left: 7px; }
+
+.nav-tabs>li>a { background-color: #f8f8f8; border: 1px solid #dddddd; padding: 10px 30px; margin-left: 5px; }
+
+.nav>li>a:hover, .nav>li>a:focus { background-color: #dddddd; }
+
+.tab-content { padding-top: 15px; }
